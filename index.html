@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legendary Soaks Crafting Board</title>
+<meta name="description" content="Who in the Legendary Soaks guild can craft what in WoW: Forever, from the guild's own in-game probe data.">
+<style>
+:root {
+  --page: #121110; --panel: #201d1a; --panel-2: #181614;
+  --ink: #edeae4; --ink-strong: #ffffff; --ink-soft: #b5afa5; --ink-faint: #837d73;
+  --ember: #d96a1e; --ember-hot: #f0954a; --steel: #8fa9c0;
+  --line: #33302b; --line-soft: #262421;
+  --sans: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { background: var(--page); }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 var(--sans); overflow-x: hidden; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 20px 16px 48px; }
+.eyebrow { font: 600 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ember); margin: 0 0 6px; }
+h1 { font: 800 28px/1.12 var(--sans); letter-spacing: -.01em; margin: 0 0 6px; color: var(--ink-strong); }
+.sub { font: 12px var(--mono); color: var(--ink-soft); margin: 0 0 18px; }
+nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+nav button { font: 600 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft);
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+nav button[aria-selected="true"] { color: var(--ink-strong); border-color: var(--ember); background: var(--panel); }
+section[hidden] { display: none; }
+h2 { font: 700 16px var(--sans); margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+h2::before { content: "▸ "; color: var(--ember); }
+input[type=search], select { width: 100%; font: 16px var(--sans); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+input[type=search]:focus, select:focus { outline: 2px solid var(--ember); outline-offset: 1px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.row > * { flex: 1 1 220px; min-width: 0; }
+label.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-soft); flex: 0 0 auto; }
+.hint { font-size: 13px; color: var(--ink-faint); margin: 6px 0 12px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.card h3 { font: 700 16px var(--sans); margin: 0 0 2px; color: var(--ink-strong); overflow-wrap: anywhere; }
+.meta { font: 12px var(--mono); color: var(--ink-soft); margin: 0 0 8px; overflow-wrap: anywhere; }
+.tag { display: inline-block; font: 600 11px var(--mono); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line);
+  color: var(--ink-soft); margin: 0 4px 4px 0; }
+.tag.ok { color: #9fd49a; border-color: #3d5a3a; }
+.tag.no { color: var(--ink-faint); }
+.tag.ember { color: var(--ember-hot); border-color: #6b3a17; }
+.k { font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin: 8px 0 3px; }
+ul.plain { list-style: none; margin: 0; padding: 0; }
+ul.plain li { padding: 2px 0; overflow-wrap: anywhere; }
+.n { font-family: var(--mono); color: var(--ink-soft); }
+.bar { height: 6px; background: var(--line-soft); border-radius: 3px; overflow: hidden; margin: 3px 0 7px; }
+.bar > i { display: block; height: 100%; background: var(--ember); }
+.prof { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.list .item { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.list .item b { color: var(--ink-strong); flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.empty { color: var(--ink-faint); padding: 12px 0; }
+footer { margin-top: 32px; font: 12px var(--mono); color: var(--ink-faint); border-top: 1px solid var(--line); padding-top: 10px; }
+footer p { margin: 4px 0; }
+@media (max-width: 480px) { h1 { font-size: 23px; } .cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Legendary Soaks · WoW: Forever · crafting board</p>
+  <h1>Who can craft what</h1>
+  <p class="sub" id="sub">Loading the guild's data…</p>
+
+  <nav role="tablist">
+    <button role="tab" data-tab="search" aria-selected="true">Who can craft</button>
+    <button role="tab" data-tab="recipes" aria-selected="false">Recipes</button>
+    <button role="tab" data-tab="chars" aria-selected="false">Characters</button>
+    <button role="tab" data-tab="books" aria-selected="false">Library books</button>
+  </nav>
+
+  <section id="tab-search">
+    <input type="search" id="q" placeholder="An item, recipe or reagent… e.g. Elixir of Agility, Copper" autocomplete="off">
+    <p class="hint">Matches recipe names and their reagents. "Closest" is who has the profession and how many skill points they still need.</p>
+    <div class="cards" id="results"></div>
+  </section>
+
+  <section id="tab-recipes" hidden>
+    <div class="row">
+      <select id="prof"></select>
+      <input type="search" id="rf" placeholder="Filter by name" autocomplete="off">
+      <label class="check"><input type="checkbox" id="ours"> Only ones we can craft</label>
+    </div>
+    <div class="list" id="rlist"></div>
+  </section>
+
+  <section id="tab-chars" hidden>
+    <div class="cards" id="clist"></div>
+  </section>
+
+  <section id="tab-books" hidden>
+    <p class="hint">25 library books earn the level-30 quest (bow, shield or off-hand). Hand them in to Garion Wendell, Stormwind Mage Quarter.</p>
+    <div class="list" id="blist"></div>
+  </section>
+
+  <footer>
+    <p id="updated"></p>
+    <p>Unofficial fan tool for one guild. Not affiliated with Blizzard Entertainment or WoW: Forever.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+// Every value from data.json goes into the page with textContent, never innerHTML.
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return e;
+}
+const $ = id => document.getElementById(id);
+let DATA = null, ALL = [];
+
+function recipeCard(r) {
+  const card = el("div", { class: "card" });
+  card.append(el("h3", { text: r.name }));
+  card.append(el("p", { class: "meta", text: `${r.prof} · learn at ${r.learn_at} · gray at ${r.colours[3]}` }));
+  card.append(el("span", { class: "tag " + (r.trainer ? "ember" : "no"), text: r.trainer ? "trainer teaches it" : "recipe drop / vendor" }));
+  card.append(el("p", { class: "k", text: "Reagents" }));
+  const ul = el("ul", { class: "plain" });
+  for (const g of r.reagents) ul.append(el("li", {}, el("span", { class: "n", text: g.count + "× " }), g.name));
+  if (!r.reagents.length) ul.append(el("li", { class: "empty", text: "none listed" }));
+  card.append(ul);
+  card.append(el("p", { class: "k", text: "Can craft" }));
+  if (r.crafters_known.length) for (const c of r.crafters_known) card.append(el("span", { class: "tag ok", text: c }));
+  else card.append(el("span", { class: "tag no", text: "nobody yet" }));
+  if (r.closest.length) {
+    card.append(el("p", { class: "k", text: "Closest" }));
+    const cl = el("ul", { class: "plain" });
+    for (const c of r.closest)
+      cl.append(el("li", {}, c.character + " ", el("span", { class: "n", text: c.needs === 0 ? `(${c.rank}, can learn now)` : `(${c.rank}, needs ${c.needs} more)` })));
+    card.append(cl);
+  }
+  return card;
+}
+
+function search() {
+  const q = $("q").value.trim().toLowerCase();
+  const box = $("results");
+  box.replaceChildren();
+  if (q.length < 2) { box.append(el("p", { class: "empty", text: "Type at least two letters." })); return; }
+  const hits = ALL.filter(r => r.name.toLowerCase().includes(q) || r.reagents.some(g => g.name.toLowerCase().includes(q)));
+  hits.sort((a, b) => (b.name.toLowerCase().includes(q) - a.name.toLowerCase().includes(q)) || (b.crafters_known.length - a.crafters_known.length) || a.learn_at - b.learn_at);
+  if (!hits.length) { box.append(el("p", { class: "empty", text: "No recipe or reagent matches that." })); return; }
+  for (const r of hits.slice(0, 40)) box.append(recipeCard(r));
+  if (hits.length > 40) box.append(el("p", { class: "empty", text: `${hits.length - 40} more; type more of the name.` }));
+}
+
+function recipes() {
+  const prof = $("prof").value, f = $("rf").value.trim().toLowerCase(), ours = $("ours").checked;
+  const list = $("rlist");
+  list.replaceChildren();
+  const rows = (DATA.recipes[prof] || []).filter(r => (!f || r.name.toLowerCase().includes(f)) && (!ours || r.crafters_known.length));
+  if (!rows.length) { list.append(el("p", { class: "empty", text: "Nothing matches." })); return; }
+  for (const r of rows.slice(0, 300)) {
+    const item = el("div", { class: "item" }, el("b", { text: r.name }), el("span", { class: "n", text: "learn " + r.learn_at }));
+    if (r.crafters_known.length) item.append(el("span", { class: "tag ok", text: r.crafters_known.join(", ") }));
+    else if (r.closest.length) item.append(el("span", { class: "tag no", text: "closest: " + r.closest[0].character }));
+    item.addEventListener("click", () => { $("q").value = r.name; show("search"); search(); });
+    item.style.cursor = "pointer";
+    list.append(item);
+  }
+  if (rows.length > 300) list.append(el("p", { class: "empty", text: `${rows.length - 300} more; filter by name.` }));
+}
+
+function chars() {
+  const box = $("clist");
+  for (const c of DATA.characters) {
+    const card = el("div", { class: "card" });
+    card.append(el("h3", { text: c.name + (c.last_name ? " " + c.last_name : "") }));
+    const bits = [c.level != null ? "level " + c.level : "not seen in game yet", c.race, c.class].filter(Boolean);
+    card.append(el("p", { class: "meta", text: bits.join(" · ") + (c.player ? "  ·  played by " + c.player : "") }));
+    const profs = Object.entries(c.professions);
+    if (!profs.length) card.append(el("p", { class: "empty", text: "No professions yet." }));
+    for (const [p, v] of profs) {
+      const max = v.max || 300;
+      card.append(el("div", { class: "prof" }, el("span", { text: p }), el("span", { class: "n", text: v.rank == null ? "planned" : `${v.rank} / ${v.max || "?"}` })));
+      const bar = el("div", { class: "bar" }), fill = el("i");
+      fill.style.width = (v.rank == null ? 0 : Math.min(100, 100 * v.rank / max)) + "%";
+      bar.append(fill);
+      card.append(bar);
+    }
+    if (c.recipes_known) card.append(el("p", { class: "meta", text: c.recipes_known.length + " recipes seen in their profession windows" }));
+    box.append(card);
+  }
+}
+
+function books() {
+  const box = $("blist");
+  for (const b of DATA.books) box.append(el("div", { class: "item" }, el("b", { text: b.name }), el("span", { class: "n", text: b.zone }), el("span", { class: "tag", text: "worth it from " + b.level })));
+}
+
+function show(tab) {
+  for (const b of document.querySelectorAll("nav button")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
+  for (const s of document.querySelectorAll("section")) s.hidden = s.id !== "tab-" + tab;
+  history.replaceState(null, "", tab === "search" ? location.pathname + location.search : "#" + tab);
+}
+
+fetch("data.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
+  DATA = d;
+  for (const [prof, list] of Object.entries(d.recipes)) for (const r of list) ALL.push(Object.assign({ prof }, r));
+  $("sub").textContent = `${d.characters.length} characters · ${ALL.length} recipes · ${ALL.filter(r => r.crafters_known.length).length} we can already craft`;
+  $("updated").textContent = `Updated ${d.generated_at} Eastern · from the guild's own in-game probe data`;
+  for (const p of Object.keys(d.recipes)) $("prof").append(el("option", { value: p, text: p }));
+  for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => show(b.dataset.tab));
+  $("q").addEventListener("input", search);
+  for (const id of ["prof", "rf", "ours"]) $(id).addEventListener("input", recipes);
+  const want = new URLSearchParams(location.search).get("q");
+  if (want) $("q").value = want;
+  search(); recipes(); chars(); books();
+  const tab = location.hash.slice(1);
+  if (["search", "recipes", "chars", "books"].includes(tab)) show(tab);
+}).catch(() => { $("sub").textContent = "Couldn't load data.json."; });
+</script>
+</body>
+</html>
