@@ -54,6 +54,12 @@ ul.plain li { padding: 2px 0; overflow-wrap: anywhere; }
 .list .item { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
 .list .item b { color: var(--ink-strong); flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
 .empty { color: var(--ink-faint); padding: 12px 0; }
+.gm { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line-soft); }
+.gm:first-of-type { border-top: 0; }
+.gm b { color: var(--ink-strong); flex: 1 1 150px; min-width: 0; overflow-wrap: anywhere; }
+.gm .n { font-size: 12px; }
+.gm .pf { flex: 1 1 100%; font-size: 13px; color: var(--ink-soft); }
+.card.ask { border-style: dashed; border-color: #6b3a17; }
 footer { margin-top: 32px; font: 12px var(--mono); color: var(--ink-faint); border-top: 1px solid var(--line); padding-top: 10px; }
 footer p { margin: 4px 0; }
 @media (max-width: 480px) { h1 { font-size: 23px; } .cards { grid-template-columns: 1fr; } }
@@ -69,6 +75,7 @@ footer p { margin: 4px 0; }
     <button role="tab" data-tab="search" aria-selected="true">Who can craft</button>
     <button role="tab" data-tab="recipes" aria-selected="false">Recipes</button>
     <button role="tab" data-tab="chars" aria-selected="false">Characters</button>
+    <button role="tab" data-tab="guild" aria-selected="false">Guild</button>
     <button role="tab" data-tab="books" aria-selected="false">Library books</button>
   </nav>
 
@@ -89,6 +96,11 @@ footer p { margin: 4px 0; }
 
   <section id="tab-chars" hidden>
     <div class="cards" id="clist"></div>
+  </section>
+
+  <section id="tab-guild" hidden>
+    <p class="hint" id="ghint"></p>
+    <div class="cards" id="glist"></div>
   </section>
 
   <section id="tab-books" hidden>
@@ -190,6 +202,44 @@ function chars() {
   }
 }
 
+
+function guild() {
+  const box = $("glist"), g = DATA.guild;
+  if (!g) { box.append(el("p", { class: "empty", text: "No guild scan yet. Anyone in the guild: TampaProbe, open the guild tab, /tprobe, /reload, drop the file in Discord." })); return; }
+  const placed = g.members.filter(m => m.group).length;
+  $("ghint").textContent = `${g.name}: ${g.members.length} characters, ${placed} matched to a player. Guild scan ${g.scanned}. ` +
+    `Not right, or one of yours is under "Who's this?" Tell the bot in Discord: "Zaith is mine" or "Drunk Taste is my main".`;
+  const groups = new Map();
+  for (const m of g.members) if (m.group) { if (!groups.has(m.group)) groups.set(m.group, []); groups.get(m.group).push(m); }
+  const line = m => {
+    const row = el("div", { class: "gm" }, el("b", { text: m.name + (m.main ? " ★" : "") }),
+      el("span", { class: "n", text: `${m.level} ${m.class || ""}` }));
+    if (m.rank) row.append(el("span", { class: "tag", text: m.rank }));
+    if (m.status === "guess") row.append(el("span", { class: "tag ember", text: "guess" }));
+    if (m.professions) {
+      const p = Object.entries(m.professions).filter(([k]) => !["Cooking", "First Aid", "Fishing"].includes(k))
+        .map(([k, v]) => v.rank == null ? k : `${k} ${v.rank}`);
+      if (p.length) row.append(el("span", { class: "pf", text: p.join(" · ") }));
+    }
+    return row;
+  };
+  const order = [...groups.entries()].sort((a, b) => Math.max(...b[1].map(m => m.level)) - Math.max(...a[1].map(m => m.level)));
+  for (const [name, ms] of order) {
+    const card = el("div", { class: "card" }, el("h3", { text: name }),
+      el("p", { class: "meta", text: ms.length + (ms.length === 1 ? " character" : " characters") }));
+    ms.sort((a, b) => (b.main === true) - (a.main === true) || b.level - a.level);
+    for (const m of ms) card.append(line(m));
+    box.append(card);
+  }
+  const open = g.members.filter(m => !m.group);
+  if (open.length) {
+    const card = el("div", { class: "card ask" }, el("h3", { text: "Who's this?" }),
+      el("p", { class: "meta", text: "Nobody has claimed these yet" }));
+    for (const m of open) card.append(line(m));
+    box.append(card);
+  }
+}
+
 function books() {
   const box = $("blist");
   for (const b of DATA.books) box.append(el("div", { class: "item" }, el("b", { text: b.name }), el("span", { class: "n", text: b.zone }), el("span", { class: "tag", text: "worth it from " + b.level })));
@@ -204,7 +254,7 @@ function show(tab) {
 fetch("data.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
   DATA = d;
   for (const [prof, list] of Object.entries(d.recipes)) for (const r of list) ALL.push(Object.assign({ prof }, r));
-  $("sub").textContent = `${d.characters.length} characters · ${ALL.length} recipes · ${ALL.filter(r => r.crafters_known.length).length} we can already craft`;
+  $("sub").textContent = (d.guild ? `${d.guild.members.length} in the guild · ` : "") + `${d.characters.length} characters · ${ALL.length} recipes · ${ALL.filter(r => r.crafters_known.length).length} we can already craft`;
   $("updated").textContent = `Updated ${d.generated_at} Eastern · from the guild's own in-game probe data`;
   for (const p of Object.keys(d.recipes)) $("prof").append(el("option", { value: p, text: p }));
   for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => show(b.dataset.tab));
@@ -212,9 +262,9 @@ fetch("data.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
   for (const id of ["prof", "rf", "ours"]) $(id).addEventListener("input", recipes);
   const want = new URLSearchParams(location.search).get("q");
   if (want) $("q").value = want;
-  search(); recipes(); chars(); books();
+  search(); recipes(); chars(); guild(); books();
   const tab = location.hash.slice(1);
-  if (["search", "recipes", "chars", "books"].includes(tab)) show(tab);
+  if (["search", "recipes", "chars", "guild", "books"].includes(tab)) show(tab);
 }).catch(() => { $("sub").textContent = "Couldn't load data.json."; });
 </script>
 </body>
