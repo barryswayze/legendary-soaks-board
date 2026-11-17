@@ -95,6 +95,7 @@ footer p { margin: 4px 0; }
   </section>
 
   <section id="tab-chars" hidden>
+    <p class="hint">Live characters only, as of each player's last TampaProbe file. Levels move fast: drop a fresh file in Discord to update yours (guild tab open, /tprobe, /reload). The Guild tab has everyone's current level.</p>
     <div class="cards" id="clist"></div>
   </section>
 
@@ -185,7 +186,8 @@ function chars() {
   for (const c of DATA.characters) {
     const card = el("div", { class: "card" });
     card.append(el("h3", { text: c.name + (c.last_name ? " " + c.last_name : "") }));
-    const bits = [c.level != null ? "level " + c.level : "not seen in game yet", c.race, c.class].filter(Boolean);
+    const asOf = c.as_of ? new Date(c.as_of + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : null;
+    const bits = [c.level != null ? "level " + c.level + (asOf ? " as of " + asOf : "") : "not seen in game yet", c.race, c.class].filter(Boolean);
     card.append(el("p", { class: "meta", text: bits.join(" · ") + (c.player ? "  ·  played by " + c.player : "") }));
     const profs = Object.entries(c.professions);
     if (!profs.length) card.append(el("p", { class: "empty", text: "No professions yet." }));
